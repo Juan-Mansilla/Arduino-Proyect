@@ -1,0 +1,110 @@
+Código  base del proyecto:
+
+int pulsePin = 2;
+volatile int BPM;                   // Pulsaciones por minuto
+volatile int Signal;                // Entrada de datos del sensor de pulsos
+volatile int IBI = 600;             // tiempo entre pulsaciones
+volatile boolean Pulse = false;     // Verdadero cuando la onda de pulsos es alta, falso cuando es Baja
+volatile boolean QS = false;        // Bandera del Quantified Self
+
+
+int redPin = 9;                     // Pin rojo
+int greenPin = 10;                  // Pin verde
+int buzzerPin = 7;                  // Pin conectado al buzzer
+
+
+int potPin = 1;                     // Pin hacia el potenciómetro
+int sensorPin = 0;                  //Pin hacia el dedo de la persona
+
+
+long red=0xFF0000;                  // Código del color rojo en hexadecimal
+long green=0x00FF00;                // Código del color verde
+long yellow=0x000080;               // Todos almacenados en variables tipo "long"
+
+
+int band = 170;                     // Ajustar este valor para mayor o menor sensibilidad
+
+
+void setup()
+{
+  pinMode(potPin, INPUT);           // Entrada análoga A1 de la placa Arduino
+  pinMode(sensorPin, INPUT);        // Entrada analoga A0 del Arduino
+  pinMode(redPin, OUTPUT);          // Salida hacia el pin D9 (rojo)
+  pinMode(greenPin, OUTPUT);        // Salida hacia el pin D10 (verde)
+  pinMode(yellowPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);       // Salida hacia el pin D7 (buzzer)
+  Serial.begin(9600);
+  pinMode(13, OUTPUT);   //LED ROJO                                     
+  interruptSetup();
+}
+
+
+void loop()
+{
+int pulso = analogRead(A2);            //Lee el valor del pulsómetro conectado al puerto Análogo A0
+ delay(100);
+ if (pulso >= 497) {                   // Enciende led 13 cuando el pulso pasa de un valor (debe ajustarse)
+    digitalWrite(13, HIGH);
+ }  
+ else{
+    digitalWrite(13, LOW);
+ }  
+    //Serial.print("BPM = ");  Serial.println(BPM);
+    //Habilitar estas línea para ver BPM en el monitor serial pero deshabilitar la siguiente
+   Serial.println(pulso);             // envía el valor del pulso por el puerto serie  (deshabilitar si habilita la anterior línea)
+  if (QS == true){                    // Bandera del Quantified Self es verdadera cuando el Arduino busca un pulso del corazón
+    QS = false;                       // Reset a la bandera del Quantified Self
+  }
+
+
+  int sensor = analogRead(sensorPin); // Medición de la resistencia en la mano
+  int pot = analogRead(potPin);       // Medición del valor en el potenciometro
+ 
+ Serial.print("Pot: ");               //Imprime en el monitor serial el valor del potenciómetro
+ Serial.print(pot);
+ Serial.print(" Sensor Input: ");     // Medición de la resistencia de la persona
+ Serial.print(sensor);
+ Serial.print(" LED: ");              // Indica el LED que debe estar encendido
+ if (sensor > (pot + band))
+    Serial.println("RED");
+ else if (sensor < (pot - band))
+    Serial.println("YELLOW");
+ else
+    Serial.println("GREEN");
+ delay(500);
+
+
+  int gsr = analogRead(sensorPin);    // Cambio de nombre al pin que va al dedo del usuario
+  if (gsr > (pot + band))
+ {
+     setColor(green);
+     beep();
+ } else if (gsr < (pot - band))
+     setColor(yellow);
+ else
+     setColor(red);
+}
+
+
+
+
+void setColor(long rgb)               // Configuración de colores
+{
+    int red = rgb >> 16;
+    int green = (rgb >> 8) & 0xFF;
+    int blue = rgb & 0xFF;
+    analogWrite(redPin, 255 - red);
+    analogWrite(greenPin, 255 - green);
+    analogWrite(yellowPin, 255 - yellow);
+}
+
+
+void beep(){                          // Configuración del buzzer
+     for (int i=0; i<1000; ++i)
+ {
+      digitalWrite(buzzerPin, HIGH);
+      delayMicroseconds(100);
+      digitalWrite(buzzerPin, LOW);
+      delayMicroseconds(100);
+ }
+}
